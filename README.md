@@ -2,10 +2,6 @@
 
 [PostCSS] plugin for splitting css into multiple css files with sourcemaps support for preventing limitation of shinny ie9.
 
-[PostCSS]: https://github.com/postcss/postcss
-[ci-img]:  https://travis-ci.org/VitaliyR/postcss-esplit.svg?branch=master
-[ci]:      https://travis-ci.org/VitaliyR/postcss-esplit
-
 ```css
 /* Input example - style.css */
 @charset "UTF-8";
@@ -70,7 +66,8 @@ processor plugins list.
 
 
 ## Options
-* `maxSelectors`    *{number=4000}* count of selectors exceeding which css file should be separated
+* `maxSelectors` *{number=4000}* count of selectors exceeding which css file should be separated
+* `maxSize` *{number=280000}* file size limit
 * `fileName` *{string=%original%-%i%}* template for retrieving name of separated files
     * `%original%` *{string}* name of original file
     * `%i%` *{number}* index of separated file

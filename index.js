@@ -16,6 +16,7 @@ var helpers = require('./lib/helpers');
  */
 var defaults = {
     maxSelectors: 4000,
+    maxSize: 280000,
     fileName: '%original%-%i%',
     fileNameStartIndex: 0,
     writeFiles: true,
@@ -35,6 +36,7 @@ var treeSelectors;
 var selectors;
 var options;
 var messages;
+var size;
 
 /**
  * Moves rules from start to, including, end nodes from root to new postcss.root
@@ -150,7 +152,9 @@ var processTree = function (css) {
 
         !startingNode && (startingNode = node);
 
-        if ((treeSelectors += node.selectors.length) > options.maxSelectors) {
+        size += node.toString().length;
+
+        if ((treeSelectors += node.selectors.length) > options.maxSelectors || size > options.maxSize) {
             var selInSource = node.selectors.length - (treeSelectors - options.maxSelectors);
             endNode = splitRule(node, selInSource) || prevNode;
 
@@ -159,7 +163,7 @@ var processTree = function (css) {
             var newFile = moveNodes(startingNode, endNode, css);
             roots.push(newFile);
 
-            treeSelectors = 0;
+            treeSelectors = size = 0;
             processTree(css);
 
             return false;
@@ -171,31 +175,31 @@ var processTree = function (css) {
     });
 };
 
-/**
- * Log message to PostCSS
- * Arguments are used for filling template
- *
- * @param {string} msg
- */
-var log = function (msg/* ...args */) {
-    Array.prototype.slice.call(arguments, 1, arguments.length).forEach(function (data) {
-        msg = msg.replace(/%s/, data);
-    }, this);
-
-    messages.push({
-        type: 'info',
-        plugin: pkg.name,
-        text: msg
-    });
-
-    if (options.quiet) return;
-
-    var args = [
-        chalk.green('>>') + ' ' + pkg.name + ': ' + msg
-    ];
-
-    console.log.apply(this, args);
-};
+// /**
+//  * Log message to PostCSS
+//  * Arguments are used for filling template
+//  *
+//  * @param {string} msg
+//  */
+// var log = function (msg/* ...args */) {
+//     Array.prototype.slice.call(arguments, 1, arguments.length).forEach(function (data) {
+//         msg = msg.replace(/%s/, data);
+//     }, this);
+//
+//     messages.push({
+//         type: 'info',
+//         plugin: pkg.name,
+//         text: msg
+//     });
+//
+//     if (options.quiet) return;
+//
+//     var args = [
+//         chalk.green('>>') + ' ' + pkg.name + ': ' + msg
+//     ];
+//
+//     console.log.apply(this, args);
+// };
 
 /**
  * fs.writeFile which returns Promise
@@ -301,7 +305,7 @@ module.exports = postcss.plugin(pkg.name, function (opts) {
         }
 
         roots = [];
-        treeSelectors = selectors = 0;
+        treeSelectors = selectors = size = 0;
 
         processTree(css);
 
@@ -320,18 +324,18 @@ module.exports = postcss.plugin(pkg.name, function (opts) {
             );
         }, this);
 
-        if (roots.length) {
-            log('Divided into %s style files %s (Found %s selectors)',
-                roots.length,
-                result.opts.to ? 'from ' + result.opts.to : '',
-                selectors
-            );
-        } else {
-            log('Found %s selectors, skipping %s',
-                selectors,
-                result.opts.to || ''
-            );
-        }
+        // if (roots.length) {
+        //     log('Divided into %s style files %s (Found %s selectors)',
+        //         roots.length,
+        //         result.opts.to ? 'from ' + result.opts.to : '',
+        //         selectors
+        //     );
+        // } else {
+        //     log('Found %s selectors, skipping %s',
+        //         selectors,
+        //         result.opts.to || ''
+        //     );
+        // }
 
         return new Promise(function (pluginDone, pluginFailed) {
             Promise.all(rootsProcessing).then(function (processedRoots) {
